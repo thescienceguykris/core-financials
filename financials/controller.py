@@ -33,7 +33,7 @@ def getAuthCode( settings, state, args ):
     return req.json()
 
 def saveAuthCode( db, auth_code ):
-    access_token = models.access_tokens.tokens(
+    access_token = models.tokens(
         access_token=auth_code.get("access_token"),
         refresh_token=auth_code.get("refresh_token"),
         client_id=auth_code.get("client_id"),
@@ -45,7 +45,7 @@ def saveAuthCode( db, auth_code ):
     return db.session.commit()
 
 def getAuthCodeFromDB():
-    token = models.access_tokens.tokens.query.first()
+    token = models.tokens.query.first()
     return token.access_token
 
 def whoami( auth_code ):
