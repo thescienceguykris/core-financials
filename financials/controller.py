@@ -9,12 +9,8 @@ def getLoginUrl( settings, state ):
 
     return auth_url.format( client_id, redirect_uri, state )
 
-def getAuthCode( settings, state, args ):
+def getAuthCode( settings, args ):
     code = args.get('code')
-    returned_state = args.get('state')
-
-    if returned_state != state:
-        return "Invalid state returned.", 400
 
     if code == None:
         return "Invalid code returned.", 403
@@ -32,21 +28,33 @@ def getAuthCode( settings, state, args ):
 
     return req.json()
 
-def saveAuthCode( db, auth_code ):
+def saveAuthCode( db, current_user, auth_code ):
     access_token = models.tokens(
         access_token=auth_code.get("access_token"),
         refresh_token=auth_code.get("refresh_token"),
         client_id=auth_code.get("client_id"),
         user_id=auth_code.get("user_id"),
-        expires_in=auth_code.get("expires_in")
+        expires_in=auth_code.get("expires_in"),
+        belongs_to_id=current_user.id
     )
 
     db.session.add ( access_token ) 
     return db.session.commit()
 
-def getAuthCodeFromDB():
-    token = models.tokens.query.first()
-    return token.access_token
+def getAuthCodeFromDB( username ):
+    user = models.user.query.filter_by(username=username).first()
+    token = models.tokens.query.filter_by(belongs_to=user).first()
+
+    if token == None:
+        return (None, False)
+
+    return (token.access_token, True)
+
+def doesUserExist( username ):
+    current_user = models.user.query.filter_by(username=username).first()
+
+    return current_user != None
+    
 
 def whoami( auth_code ):
     return util.get_monzo_request( "/ping/whoami", auth_code= auth_code ).json()
