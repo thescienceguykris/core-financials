@@ -48,5 +48,17 @@ def getAuthCodeFromDB():
     token = models.access_tokens.tokens.query.first()
     return token.access_token
 
-def whoami(auth_code):
+def whoami( auth_code ):
     return util.get_monzo_request( "/ping/whoami", auth_code= auth_code ).json()
+
+def accounts( db, auth_code ):
+    response = util.get_monzo_request( "/accounts", auth_code= auth_code ).json()
+    accounts = response.get("accounts")
+
+    for account in accounts:
+        db.session.add(
+            models.bank_account( account.get("id") )
+        )
+    
+    db.session.commit()
+    return True
