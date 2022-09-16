@@ -1,6 +1,7 @@
 import financials.models as models
 import financials.common.util as util
 import requests
+import datetime
 
 def getLoginUrl( settings, state ):
     auth_url = "https://auth.monzo.com/?client_id={0}&redirect_uri={1}&response_type=code&state={2}"
@@ -43,12 +44,14 @@ def saveAuthCode( db, current_user, auth_code ):
 
 def getAuthCodeFromDB( username ):
     user = models.user.query.filter_by(username=username).first()
-    token = models.tokens.query.filter_by(belongs_to=user).first()
+    token = models.tokens.query.filter_by(belongs_to=user).order_by(models.tokens.expires_at.desc()).first()
+
+    age_of_token:datetime.timedelta = datetime.datetime.now() - token.created_at
 
     if token == None:
-        return (None, False)
+        return (None, (False, False))
 
-    return (token.access_token, True)
+    return (token.access_token, (True, age_of_token.seconds < 300))
 
 def doesUserExist( username ):
     current_user = models.user.query.filter_by(username=username).first()
@@ -72,3 +75,46 @@ def accounts( db, username, auth_code ):
     
     db.session.commit()
     return True
+
+def transactions( db, username, account_id, auth_code, younger_than_300 ):
+    current_user = models.user.query.filter_by(username=username).first()
+    account = models.bank_account.query.filter_by(id=account_id, belongs_to_id=current_user.id).first()
+
+    if account == None:
+        return "Invalid account", 400
+
+    params = {
+        "account_id": account.monzo_account_id
+    }
+
+    if not( younger_than_300 ):
+        params["since"] = (datetime.datetime.now() - datetime.timedelta(days=89)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    response = util.get_monzo_request( "/transactions", auth_code=auth_code, params=params ).json()
+    transactions = response.get("transactions")
+
+    for transaction in transactions:
+        settled_date = None
+        if transaction.get('settled') == None:
+            settled_date = datetime.datetime.strptime( transaction.get('settled'), "%Y-%m-%dT%H:%M:%S.%fZ")
+
+        db.session.add(
+            models.transaction(
+                account.id,
+                transaction.get('amount'),
+                transaction.get('amount_is_pending'),
+                transaction.get('category'),
+                transaction.get('description'),
+                transaction.get('id'),
+                datetime.datetime.strptime( transaction.get('created'), "%Y-%m-%dT%H:%M:%S.%fZ"),
+                datetime.datetime.strptime( transaction.get('updated'), "%Y-%m-%dT%H:%M:%S.%fZ"),
+                settled_date
+            )
+        )
+    
+    db.session.commit()
+
+    if transactions == None:
+        return response, 400
+
+    return transactions

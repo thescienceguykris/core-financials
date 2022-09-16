@@ -62,4 +62,12 @@ def accounts(username):
     accounts = controller.accounts( db, username, auth_code)
     return "OK", 200
 
+@app.route('/<username>/accounts/<account_id>/transactions')
+def transactions(username, account_id):
+    auth_code, (success, younger_than_300) = controller.getAuthCodeFromDB( username )
+    if not success:
+        return "Invalid username", 403
+
+    return controller.transactions( db, username, account_id, auth_code, younger_than_300)
+
 app.run(host="0.0.0.0", debug=True)

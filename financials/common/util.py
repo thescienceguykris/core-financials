@@ -8,10 +8,14 @@ def get_random_string(length):
     result_str = ''.join(secrets.choice(letters) for i in range(length))
     return result_str
 
-def get_monzo_request( endpoint: string, auth_code: string ):
-    return requests.get(
+def get_monzo_request( endpoint: string, auth_code: string, params: object = None ):
+    req = requests.get(
         url="https://api.monzo.com" + endpoint,
         headers={
             "Authorization": "Bearer " + auth_code
-        }
+        },
+        params=params
     )
+
+    print (req.request.url)
+    return req

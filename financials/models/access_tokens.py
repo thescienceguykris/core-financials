@@ -9,6 +9,7 @@ class tokens(db.Model):
    refresh_token = db.Column(db.Text())
    client_id = db.Column(db.String(50))
    user_id = db.Column(db.String(50))
+   created_at = db.Column(db.DateTime())
    expires_at = db.Column(db.DateTime())
    belongs_to_id = db.Column(db.Integer, db.ForeignKey("user.id"))
    belongs_to = relationship("user", back_populates="tokens")
@@ -18,5 +19,6 @@ class tokens(db.Model):
       self.refresh_token = refresh_token
       self.client_id = client_id
       self.user_id = user_id
+      self.created_at = datetime.datetime.now()
       self.expires_at = datetime.datetime.now() + datetime.timedelta(seconds=expires_in*0.9)
       self.belongs_to_id = belongs_to_id
