@@ -1,5 +1,3 @@
-
-from turtle import update
 import financials.models as models
 import financials.common.util as util
 import requests
