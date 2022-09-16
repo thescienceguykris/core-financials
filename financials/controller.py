@@ -1,3 +1,5 @@
+
+from turtle import update
 import financials.models as models
 import financials.common.util as util
 import requests
@@ -94,6 +96,17 @@ def transactions( db, username, account_id, auth_code, younger_than_300 ):
     transactions = response.get("transactions")
 
     for transaction in transactions:
+        
+        try:
+            created_date = datetime.datetime.strptime( transaction.get('created'), "%Y-%m-%dT%H:%M:%S.%fZ")
+        except ValueError:
+            created_date = datetime.datetime.strptime( transaction.get('created'), "%Y-%m-%dT%H:%M:%SZ")
+                
+        try:
+            updated_date = datetime.datetime.strptime( transaction.get('updated'), "%Y-%m-%dT%H:%M:%S.%fZ")
+        except:
+            updated_date = datetime.datetime.strptime( transaction.get('updated'), "%Y-%m-%dT%H:%M:%SZ"),
+        
         settled_date = None
         if transaction.get('settled') == None:
             settled_date = datetime.datetime.strptime( transaction.get('settled'), "%Y-%m-%dT%H:%M:%S.%fZ")
@@ -106,8 +119,8 @@ def transactions( db, username, account_id, auth_code, younger_than_300 ):
                 transaction.get('category'),
                 transaction.get('description'),
                 transaction.get('id'),
-                datetime.datetime.strptime( transaction.get('created'), "%Y-%m-%dT%H:%M:%S.%fZ"),
-                datetime.datetime.strptime( transaction.get('updated'), "%Y-%m-%dT%H:%M:%S.%fZ"),
+                created_date,
+                updated_date,
                 settled_date
             )
         )
