@@ -52,10 +52,14 @@ def test_connection( username ):
     ping = controller.whoami(auth_code)
     return ping
 
-@app.route('/accounts')
-def accounts():
-    auth_code = controller.getAuthCodeFromDB()
-    accounts = controller.accounts( db, auth_code)
+@app.route('/<username>/accounts')
+def accounts(username):
+    auth_code, success = controller.getAuthCodeFromDB( username )
+
+    if not success:
+        return "Invalid username", 403
+
+    accounts = controller.accounts( db, username, auth_code)
     return "OK", 200
 
 app.run(host="0.0.0.0", debug=True)

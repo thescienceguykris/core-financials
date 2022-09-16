@@ -59,13 +59,15 @@ def doesUserExist( username ):
 def whoami( auth_code ):
     return util.get_monzo_request( "/ping/whoami", auth_code= auth_code ).json()
 
-def accounts( db, auth_code ):
+def accounts( db, username, auth_code ):
+    current_user = models.user.query.filter_by(username=username).first()
+    
     response = util.get_monzo_request( "/accounts", auth_code= auth_code ).json()
     accounts = response.get("accounts")
 
     for account in accounts:
         db.session.add(
-            models.bank_account( account.get("id") )
+            models.bank_account( account.get("id"), current_user.id )
         )
     
     db.session.commit()
