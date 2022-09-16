@@ -1,4 +1,3 @@
-from turtle import up, update
 from sqlalchemy.orm import relationship
 from financials.models import db
 
