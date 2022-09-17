@@ -118,6 +118,8 @@ def transactions( db, username, account_id, auth_code, younger_than_300 ):
                 transaction.get('description'),
                 transaction.get('id'),
                 created_date,
+                transaction.get('decline_reason', None) != None,
+                transaction.get('decline_reason'),
                 updated_date,
                 settled_date
             )

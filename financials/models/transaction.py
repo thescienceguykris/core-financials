@@ -13,9 +13,11 @@ class transaction(db.Model):
    created = db.Column(db.DateTime())
    updated = db.Column(db.DateTime())
    settled = db.Column(db.DateTime())
+   declined = db.Column(db.Boolean(), default=False)
+   decline_reason = db.Column(db.String(30))
    
 
-   def __init__(self, account_id, amount, pending, spend_category, description, monzo_transaction_id, created, updated=None, settled=None):
+   def __init__(self, account_id, amount, pending, spend_category, description, monzo_transaction_id, created, declined=None, decline_reason=None, updated=None, settled=None):
       self.account_id = account_id
       self.amount = amount
       self.pending = pending
@@ -25,3 +27,5 @@ class transaction(db.Model):
       self.created = created
       self.updated = updated
       self.settled = settled
+      self.declined = declined
+      self.decline_reason = decline_reason
