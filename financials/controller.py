@@ -69,7 +69,7 @@ def accounts( db, username, auth_code ):
     accounts = response.get("accounts")
 
     if accounts == None:
-        return response, 400
+        return "Something went wrong.", 400
 
     for account in accounts:
         db.session.add(
@@ -99,6 +99,8 @@ def transactions( db, username, account_id, auth_code, younger_than_300 ):
     if transactions == None:
         return response, 400
 
+    updated_or_new_transactions = []
+
     for transaction in transactions:
         
         try:
@@ -118,8 +120,8 @@ def transactions( db, username, account_id, auth_code, younger_than_300 ):
         # check whether record already exists
         update_session = db.session()
 
-        existing_transaction = update_session.query(transaction).filter_by(
-            models.transaction.monzo_transaction_id == transaction.get('id')
+        existing_transaction = update_session.query(models.transaction).filter_by(
+            monzo_transaction_id = transaction.get('id')
         ).first()
 
         if existing_transaction == None:
@@ -138,20 +140,22 @@ def transactions( db, username, account_id, auth_code, younger_than_300 ):
                 settled_date
             )
         )
-    
-        if (existing_transaction != None) and (existing_transaction.updated != updated_date):
+            updated_or_new_transactions.append(transaction)
+
+        if (existing_transaction != None) and ((existing_transaction.updated != updated_date) or (existing_transaction.spend_category != transaction.get('category'))):
             existing_transaction.update(
                 amount=transaction.get('amount'),
                 pending=transaction.get('amount_is_pending'),
                 spend_category=transaction.get('category'),
                 description=transaction.get('description'),
-                delined=transaction.get('decline_reason', None) != None,
+                declined=transaction.get('decline_reason', None) != None,
                 decline_reason=transaction.get('decline_reason'),
                 updated=updated_date,
                 settled=settled_date
             )
             update_session.commit()
+            updated_or_new_transactions.append(transaction)
 
     db.session.commit()
 
-    return transactions
+    return [updated_or_new_transactions, transactions]
