@@ -109,7 +109,15 @@ def transactions( db, username, account_id, auth_code, younger_than_300 ):
         if transaction.get('settled') == None:
             settled_date = datetime.datetime.strptime( transaction.get('settled'), "%Y-%m-%dT%H:%M:%S.%fZ")
 
-        db.session.add(
+        # check whether record already exists
+        update_session = db.session()
+
+        existing_transaction = update_session.query(transaction).filter_by(
+            models.transaction.monzo_transaction_id == transaction.get('id')
+        ).first()
+
+        if existing_transaction == None:
+            db.session.add(
             models.transaction(
                 account.id,
                 transaction.get('amount'),
@@ -125,6 +133,19 @@ def transactions( db, username, account_id, auth_code, younger_than_300 ):
             )
         )
     
+        if (existing_transaction != None) and (existing_transaction.updated != updated_date):
+            existing_transaction.update(
+                amount=transaction.get('amount'),
+                pending=transaction.get('amount_is_pending'),
+                spend_category=transaction.get('category'),
+                description=transaction.get('description'),
+                delined=transaction.get('decline_reason', None) != None,
+                decline_reason=transaction.get('decline_reason'),
+                updated=updated_date,
+                settled=settled_date
+            )
+            update_session.commit()
+
     db.session.commit()
 
     if transactions == None:
