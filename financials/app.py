@@ -69,5 +69,3 @@ def transactions(username, account_id):
         return "Invalid username", 403
 
     return controller.transactions( db, username, account_id, auth_code, younger_than_300)
-
-app.run(host="0.0.0.0", debug=True)
