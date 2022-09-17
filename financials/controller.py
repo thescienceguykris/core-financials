@@ -68,6 +68,9 @@ def accounts( db, username, auth_code ):
     response = util.get_monzo_request( "/accounts", auth_code= auth_code ).json()
     accounts = response.get("accounts")
 
+    if accounts == None:
+        return response, 400
+
     for account in accounts:
         db.session.add(
             models.bank_account( account.get("id"), current_user.id )
