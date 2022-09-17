@@ -93,6 +93,9 @@ def transactions( db, username, account_id, auth_code, younger_than_300 ):
     response = util.get_monzo_request( "/transactions", auth_code=auth_code, params=params ).json()
     transactions = response.get("transactions")
 
+    if transactions == None:
+        return response, 400
+
     for transaction in transactions:
         
         try:
@@ -147,8 +150,5 @@ def transactions( db, username, account_id, auth_code, younger_than_300 ):
             update_session.commit()
 
     db.session.commit()
-
-    if transactions == None:
-        return response, 400
 
     return transactions
