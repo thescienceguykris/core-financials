@@ -1,0 +1,1 @@
+from financials.app import app
